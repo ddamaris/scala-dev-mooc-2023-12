@@ -220,7 +220,6 @@ object hof{
       case None => throw new Exception("get on empty option")
     }
 
-
     def map[B](f: T => B): Option[B] = flatMap(t => Option(f(t)))
 
     def flatMap[B](f: T => Option[B]): Option[B] = this match {
@@ -228,6 +227,20 @@ object hof{
       case None => None
     }
 
+    def printIfAny(): Unit = this match {
+      case Some(v) => println(v)
+      case None =>
+    }
+
+    def zip[B](o: Option[B]): Option[(T, B)] = this match {
+      case Some(v) if !o.isEmpty => Option(v, o.get)
+      case _ => None
+    }
+
+    def filter(f: T => Boolean): Option[T] = this match {
+      case Some(v) if f(v) => Some(v)
+      case _ => None
+    }
   }
 
   case class Some[V](v: V) extends Option[V]
@@ -241,14 +254,10 @@ object hof{
 
   val o1: Option[Int] = Option(1)
   o1.isEmpty // false
-
-
-
-
-
-
-
-
+  o1.printIfAny()
+  val o2: Option[String] = Option("A")
+  o2.zip(o1).printIfAny()
+  o1.filter(_ > 0).printIfAny()
 
   /**
    *
@@ -280,21 +289,73 @@ object hof{
     */
 
     trait List[+T]{
-      def ::[TT >: T](elem: TT): List[TT] = ???
-    }
+      def ::[TT >: T](elem: TT): List[TT] = this match {
+       case t@List.::(_, _) => List.::(elem, t)
+       case List.Nil => List(elem)
+     }
+
+     def mkString(sep: String = ""): String = {
+       @tailrec
+       def loop(lst: List[T], res: String = ""): String = lst match {
+         case List.::(head, List.Nil) => res + s"$head"
+         case List.::(head, tail) => loop(tail, res + s"$head$sep")
+       }
+       loop(this)
+     }
+
+     def reverse: List[T] = {
+       @tailrec
+       def loop(lst: List[T], res: List[T] = List.Nil): List[T] = lst match {
+         case List.::(head, List.Nil) => head :: res
+         case List.::(head, tail) => loop(tail, head :: res)
+       }
+       loop(this)
+     }
+
+     def map[TT >: T](f: T => TT): List[TT] = {
+       @tailrec
+       def loop(lst: List[T], res: List[TT] = List.Nil): List[TT] = lst match {
+         case List.Nil => res
+         case List.::(head, tail) => loop(tail, f(head) :: res)
+       }
+       loop(this).reverse
+     }
+
+     def filter[TT >: T](f: TT => Boolean): List[TT] = {
+       @tailrec
+       def loop(lst: List[T], res: List[TT] = List.Nil): List[TT] = lst match {
+         case List.Nil => res
+         case List.::(head, tail) => loop(tail, if (f(head)) head :: res else res)
+       }
+       loop(this).reverse
+     }
+   }
 
     object List{
       case class ::[A](head: A, tail: List[A]) extends List[A]
       case object Nil extends List[Nothing]
 
       def apply[A](v: A*): List[A] =
-        if(v.isEmpty) List.Nil else new ::(v.head, apply(v.tail:_*))
+        if(v.isEmpty) List.Nil else ::(v.head, apply(v.tail: _*))
     }
 
-    val l1: List[Int] = List(1, 2, 3)
-    val l2: List[Int] = 1 :: 2 :: 3 :: List.Nil
+   def incList(l: List[Int]): List[Int] = l.map(_ + 1)
+   def shoutString(l: List[String]): List[String] = l.map(x => s"!$x")
 
+   val l1: List[Int] = List(1, 2, 3)
+   val l2: List[Int] = 1 :: 2 :: 3 :: List.Nil
+   val l3 = 9 :: l1
+   val l4: List[String] = List("aa", "bb", "cc")
 
+   println(l2)
+   println(l3.mkString(" "))
+   println(List.Nil.mkString(" "))
+   println(l3.reverse.mkString(" "))
+   println(List.Nil.reverse.mkString(" "))
+   println(l3.map(_ + 5).mkString(" "))
+   println((6 :: 6 :: 7 :: l3).filter(_ != 6).mkString(" "))
+   println(incList(l3).mkString(" "))
+   println(shoutString(l4).mkString(" "))
 
    /**
      * Метод cons, добавляет элемент в голову списка, для этого метода можно воспользоваться названием `::`
