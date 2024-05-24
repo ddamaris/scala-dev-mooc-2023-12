@@ -11,7 +11,7 @@ class BallsExperiment {
     val isFirstBlack = box(idxOfFirstBall) == 0
     val reducedBox = box.patch(idxOfFirstBall, Nil, 1)
     val idxOfSecondBall = Random.nextInt(reducedBox.size)
-    val isSecondWhite = reducedBox(idxOfSecondBall) == 0
+    val isSecondWhite = reducedBox(idxOfSecondBall) == 1
     isFirstBlack && isSecondWhite
   }
 }
